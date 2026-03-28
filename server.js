@@ -63,7 +63,7 @@ app.post('/api/review', async (req, res) => {
   const userMessage = `${langLabel}Please review this code:\n\n\`\`\`${language || ''}\n${code}\n\`\`\``;
 
    try {
-    const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+   const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContentStream(SYSTEM_PROMPT + '\n\n' + userMessage);
     for await (const chunk of result.stream) {
       const text = chunk.text();
