@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const path = require('path');
 
 const app = express();
@@ -13,11 +13,7 @@ const publicDir = require('fs').existsSync(path.join(__dirname, 'public'))
   ? path.join(__dirname, 'public')
   : __dirname;
 app.use(express.static(publicDir));
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
+const client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const SYSTEM_PROMPT = `You are an elite code reviewer and programming mentor at Veloflow. Your job is to deeply analyse code submitted by developers, identify weaknesses, and teach them how to improve.
 
 When given code, produce a structured review with these exact sections using markdown:
@@ -66,24 +62,16 @@ app.post('/api/review', async (req, res) => {
   const langLabel = language && language !== 'auto' ? `Language: ${language}\n\n` : '';
   const userMessage = `${langLabel}Please review this code:\n\n\`\`\`${language || ''}\n${code}\n\`\`\``;
 
-  try {
-    const stream = await client.messages.stream({
-      model: 'claude-opus-4-6',
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
-    });
-
-    for await (const event of stream) {
-      if (event.type === 'content_block_delta') {
-        if (event.delta.type === 'text_delta') {
-          res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`);
-        }
-      }
+   try {
+    const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContentStream(SYSTEM_PROMPT + '\n\n' + userMessage);
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`);
     }
-
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
+
   } catch (err) {
     console.error('Claude API error:', err);
     res.write(`data: ${JSON.stringify({ error: err.message || 'Review failed' })}\n\n`);
