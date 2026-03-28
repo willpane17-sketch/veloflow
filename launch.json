@@ -2,10 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "Veloflow Static Site",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", ".", "--port", "3000"],
-      "port": 3000
+      "name": "Veloflow (production)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "port": 3001
+    },
+    {
+      "name": "Veloflow (dev, hot-reload)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--watch", "server.js"],
+      "port": 3001
     }
   ]
 }
